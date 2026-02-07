@@ -6,6 +6,28 @@ const userService = new UserService();
 const userRepository = new UserRepository();
 
 export class UserController {
+
+  async list(req: Request, res: Response) {
+    try {
+      const users = await userRepository.findAll();
+      
+      const safeUsers = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+
+      res.status(200).json({
+        success: true,
+        data: safeUsers
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Gagal mengambil daftar user: " + error.message
+      });
+    }
+  }
+
   async register(req: Request, res: Response) {
     try {
       const user = await userService.registerUser(req.body);

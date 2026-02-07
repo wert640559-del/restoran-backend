@@ -5,16 +5,16 @@ import { authenticate, authorize } from '../middlewares/auth.middleware';
 const router = Router();
 const userController = new UserController();
 
-// Public Routes
-router.post('/register', userController.register);
-router.post('/login', userController.login);
+router.post('/login', userController.login); 
 
-// Protected Routes (Harus Login)
 router.get('/me', authenticate, (req, res) => {
   res.json({ success: true, user: req.user });
 });
 
-// Admin/Owner Only Routes
+
+router.post('/register', authenticate, authorize(['OWNER']), userController.register);
+
+router.get('/', authenticate, authorize(['OWNER', 'ADMIN']), userController.list); 
 router.delete('/:id', authenticate, authorize(['OWNER', 'ADMIN']), userController.delete);
 
 export default router;
