@@ -1,10 +1,11 @@
 model Order {
   id          String      @id @default(uuid())
-  orderNumber String      @unique // Contoh: ORD-20260207-001
+  orderNumber String      @unique 
+  tableNumber String?     
   totalAmount Float
   status      OrderStatus @default(PENDING)
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id])
   items       OrderItem[]
   payment     Payment?
   createdAt   DateTime    @default(now())

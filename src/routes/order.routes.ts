@@ -1,17 +1,21 @@
-// src/routes/order.routes.ts
 import { Router } from 'express';
 import { OrderController } from '../controllers/order.controller';
 import { authenticate, authorize } from '../middlewares/auth.middleware';
 
 const router = Router();
-const orderController = new OrderController();
+const orderCtrl = new OrderController();
 
-router.post('/', authenticate, orderController.create);
+router.post('/customer-order', orderCtrl.createFromCustomer);
 
-router.get('/', authenticate, authorize(['KASIR', 'ADMIN', 'OWNER']), orderController.list);
+router.use(authenticate);
 
-router.get('/:id', authenticate, orderController.detail);
+router.get('/', authorize(['KASIR', 'ADMIN', 'OWNER']), orderCtrl.list);
+router.get('/:id', orderCtrl.detail);
 
-router.put('/:id/cancel', authenticate, authorize(['ADMIN', 'OWNER']), orderController.cancel);
+router.post('/', authorize(['KASIR', 'ADMIN', 'OWNER']), orderCtrl.create);
+
+router.put('/:id/pay', authorize(['KASIR', 'ADMIN', 'OWNER']), orderCtrl.pay);
+
+router.put('/:id/cancel', authorize(['ADMIN', 'OWNER']), orderCtrl.cancel);
 
 export default router;
