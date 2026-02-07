@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { OrderService } from '../services/order.service';
 import { OrderRepository } from '../repositories/order.repository';
+import { PaymentService } from '../services/payment.service';
 
 const orderService = new OrderService();
 const orderRepo = new OrderRepository();
+const paymentService = new PaymentService()
 
 export class OrderController {
   // 1. Pesanan Manual oleh Staf/Kasir
@@ -26,14 +28,25 @@ export class OrderController {
     try {
       const { tableNumber, items } = req.body;
 
-      if (!tableNumber) throw new Error("Nomor meja harus diisi");
-      if (!items || items.length === 0) throw new Error("Pesanan tidak boleh kosong");
+      if (!tableNumber || !items) throw new Error("Data tidak lengkap");
 
+      // 1. Simpan order ke database (status masih PENDING)
       const order = await orderService.createCustomerOrder(tableNumber, items);
+
+      // 2. Buat transaksi di Midtrans
+      const midtransTx = await paymentService.createTransaction(order);
+
+      // 3. Kirim balik token & link pembayaran ke HP pelanggan
       res.status(201).json({ 
         success: true, 
-        message: "Pesanan terkirim, mohon tunggu konfirmasi kasir", 
-        data: order 
+        message: "Silahkan selesaikan pembayaran",
+        data: {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          total: order.totalAmount,
+          snapToken: midtransTx.token, // Digunakan kalau pakai Snap Popup
+          paymentUrl: midtransTx.redirect_url // Link halaman pembayaran
+        }
       });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });

@@ -116,4 +116,44 @@ export class OrderService {
       });
     });
   }
+
+  async handlePaymentSuccess(orderNumber: string) {
+    const order = await prisma.order.findUnique({
+        where: { orderNumber }
+    });
+
+    if (!order) throw new Error("Order tidak ditemukan");
+    
+    if (order.status === 'PAID') return order;
+
+    return await prisma.order.update({
+        where: { orderNumber },
+        data: { status: 'PAID' },
+        include: { items: { include: { menu: true } } }
+    });
+  }
+
+  async handlePaymentExpired(orderNumber: string) {
+    return await prisma.$transaction(async (tx) => {
+        const order = await tx.order.findUnique({
+        where: { orderNumber },
+        include: { items: true }
+        });
+
+        if (!order || order.status !== 'PENDING') return;
+
+        // Kembalikan stok
+        for (const item of order.items) {
+        await tx.menu.update({
+            where: { id: item.menuId },
+            data: { stock: { increment: item.qty } }
+        });
+        }
+
+        return await tx.order.update({
+        where: { orderNumber },
+        data: { status: 'CANCELLED' }
+        });
+    });
+  }
 }
