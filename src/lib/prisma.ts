@@ -19,7 +19,7 @@ const pool = new Pool({
   ssl: fixedUrl.includes('localhost') || fixedUrl.includes('127.0.0.1') 
     ? false 
     : { rejectUnauthorized: false },
-  max: 20,              // Jumlah maksimal koneksi
+  max: 20,              
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });
